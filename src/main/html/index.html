@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/_globals.css">
+    <title>ERS</title>
+</head>
+</style>
+
+<body>
+    <header id="header">
+        <nav id="nav" class="container links">
+            <div id="introView"><h1>Employee Reimbursement System</h1></div>
+            <div id="content" class="header__links links">
+                <button><a href="./login.html">Login</a></button>
+                <button><a href="./register.html">Register</a></button>
+            </div>
+        </nav>
+    </header>
+
+</body>
+<script src="../js/util.js"></script>
+<script src="../js/userConnection.js"></script>
+<script>
+
+    //First we grab the authToken from localStorage where we left it at login/register
+    let authorizedUser = localStorage.getItem("authToken");
+    let isLoggedIn = localStorage.getItem("isLoggedIn");
+    console.log("authorizedUser: ", authorizedUser);//fact finding
+    console.log("isLoggedIn: ", isLoggedIn);//fact finding
+
+    /*
+    This is a self-invoking function, also known as IIFE, imediately invoked 
+    function expression. To build one, wrap the function declaration in ()
+    then add another pair of () at the end to act as the parameter list. Effectively
+    as soon as the function is defined it is called.
+    */
+    (async function displayUser() {
+        /*
+        Now we make an API call to get our user data. The backend checks against the registered
+        users for matching username, and returns the rest of the user object.
+        */
+        let response = await getUser(authorizedUser);
+        let json = await response.json();
+        console.log("Response: ", response);//more fact finding
+        console.log("Response JSON: ", json);//we should probably remove these later
+        localStorage.setItem("id", json.id);
+        localStorage.setItem("role", json.role);
+
+        /*
+        Now we do DOM manipulation. We get the paragraph element in the HTML above
+        and append some HTML to it. This changes the DOM, and thus the browser renders 
+        the new view.
+        */
+
+        if (isLoggedIn){
+            let content = document.getElementById("content");
+            if (json.role == "EMPLOYEE") {
+                content.innerHTML = `
+                <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+                <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+                <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+                <button onclick="logout()">Logout</button>
+                `;
+            }
+            else {
+                content.innerHTML = `
+                <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+                <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+                <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+                <button><a href="./manageReimbursements.html">Manage Reimbursements</a></button>
+                <button onclick="logout()">Logout</button>
+                `;
+            }
+            let introView = document.getElementById("introView");
+            introView.innerHTML = 
+                "<h1>Welcome to Revature  " +
+                json.first_name + " " +
+                json.last_name + "!";
+        }
+
+    })(); //IIFE - Imediately Invoked Function Expression - self-invoking function.
+</script>
+</html>

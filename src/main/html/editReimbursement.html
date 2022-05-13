@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/_globals.css">
+    <title>Title</title>
+</head>
+<style>
+    th, td {
+      border:1px solid black;
+    }
+    input[type=radio],
+    input.radio {
+
+      clear: none;
+      margin: 2px 0 0 2px;
+    }
+    .links {
+        margin: auto;
+        width: 100%;
+        text-align: center;
+    }
+    </style>
+<body>
+    <div class="container">
+        <div id="links" class="links">
+        </div>
+        <div id="table">
+            <table id="content" style="width:90%; text-align: center; margin: auto;"> 
+            </table>
+        </div>
+        <div id="buttonContent" class="links">
+            <button onclick="deleteButton()" style="margin: 10px; padding: 4px 10px;">Delete Reimbursement</button>
+            <button onclick="edit()" style="margin: 10px; padding: 4px 10px;">Edit Reimbursement</button>
+        </div>
+    </div>
+</body>
+<script src="../js/util.js"></script>
+<script src="../js/reimbursementConnection.js"></script>
+<script src="../js/userConnection.js"></script>
+<script>
+    let authorizedUser = localStorage.getItem("authToken");
+    let isLoggedIn = localStorage.getItem("isLoggedIn");
+    let userID = localStorage.getItem("id");
+    let role = localStorage.getItem("role");
+    console.log("authorizedUser: ", authorizedUser);//fact finding
+    console.log("isLoggedIn: ", isLoggedIn);//fact finding
+    console.log("userID: ", userID);//fact finding
+
+    let links = document.getElementById("links");
+        if (role == "EMPLOYEE") {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+            <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+        else {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+            <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+            <button><a href="./manageReimbursements.html">Manage Reimbursements</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+
+    (async function retreiveReimbursements() {
+            let response = await getAllReimbursementsByID(userID);
+            let json = await response.json();
+            console.log("Response: ", response);//more fact finding
+            console.log("Response JSON: ", json);//we should probably remove these later
+
+
+            let content = document.getElementById("content");
+            content.innerHTML = `<tr>
+                    <th style="border: none;"></th>
+                    <th>Reimbursement Type</th>
+                    <th>Amount</th>
+                    <th>Author</th>
+                    <th>Resolver</th>
+                    <th>Status</th>
+                    <th>Date Created</th>
+                </tr>`;
+            json.forEach(element => {
+                if (element.status == 'PENDING') {
+                    content.innerHTML += `<div>
+                    <tr>
+                        <td><input type="radio" name="reimbursementID" value = "` + element.id + `"></td>
+                        <td>` + element.type + `</td>
+                        <td>$` + element.amount.toFixed(2) + `</td>
+                        <td>` + element.author.first_name + 
+                            ' ' + element.author.last_name + `</td>
+                        <td>N/A</td>
+                        <td>` + element.status + `</td>
+                        <td>` + element.date_created + `</td>
+                    </tr>
+                    </div>`;
+                }
+            });
+    })();
+
+    async function edit() {
+        let reimbursementID = {
+            id: document.querySelector('input[name="reimbursementID"]:checked').value,
+        }
+
+        console.log(reimbursementID.id)
+        let response = await getReimbursement(reimbursementID.id);
+        let json = await response.json();
+        console.log("Response: ", response);//more fact finding
+        console.log("Response JSON: ", json);//we should probably remove these later
+        let content = document.getElementById("content");
+            content.innerHTML = `<tr>
+                <th>Reimbursement Type</th>
+                <th>Amount</th>
+                <th>Author</th>
+                <th>Resolver</th>
+                <th>Status</th>
+                <th>Date Created</th>
+            </tr>`;
+            content.innerHTML += `
+                <div>
+                    <tr>
+                        <td>
+                            <input type="hidden" id="reimbursementID" readonly="true" value="
+                            ` + json.id + `
+                            ">
+                            <input type="radio" id="lodging" name="type" value = "Lodging" required>
+                            <label for="lodging">Lodging</label>
+                            <input type="radio" id="food" name="type" value = "Food" required>
+                            <label for="food">Food</label>
+                            <input type="radio" id="travel" name="type" value = "Travel" required>
+                            <label for="food">Travel</label>
+                            </td>
+                        <td>
+                            <label>Amount: $</label>
+                            <input type="number" id="amount" placeholder="` +
+                            json.amount.toFixed(2) + `" name="amount" required></td>
+                        <td>` + json.author.first_name + 
+                            ' ' + json.author.last_name + `</td>
+                        <td>N/A</td>
+                        <td>` + json.status + `</td>
+                        <td>` + json.date_created + `</td>
+                    </tr>
+                </div>
+            `;
+
+            let buttonContent = document.getElementById("buttonContent");
+            buttonContent.innerHTML = `
+            <button onclick="back()" style="margin: 10px; padding: 4px 10px;">Back</button>
+            <button onclick="submit()" style="margin: 10px; padding: 4px 10px;">Submit</button>
+            `;
+
+    }
+
+    async function deleteButton() {
+        let reimbursementID = {
+            id: document.querySelector('input[name="reimbursementID"]:checked').value,
+        }
+
+        console.log(reimbursementID.id)
+        let response = await deleteReimbursement(reimbursementID.id);
+
+        if (response.status == 200) {
+            alert("Delete Success");
+            window.location.href = "./viewReimbursements.html";
+        }
+        else {
+            alert("Unable to update!");
+        }
+    }
+
+    async function back() {
+        window.location.href = "./editReimbursement.html";
+    }
+
+    async function submit() {
+        let newValues = {
+            id: document.getElementById("reimbursementID").value,
+            type: document.querySelector('input[name="type"]:checked').value,
+            amount: document.getElementById("amount").value
+        }
+
+        console.log(newValues);
+
+        let response = await updateReimbursement(newValues);
+
+        console.log("Response: ", response);//fact finding
+        console.log("Response JSON: ", response.json());//we should delete these later
+
+        if (response.status == 201) {
+            alert("Editted Successfully");
+            window.location.href = "./viewReimbursements.html";
+        }
+        else {
+            alert("Unable to update!");
+        }
+    }
+    
+
+</script>
+</html>

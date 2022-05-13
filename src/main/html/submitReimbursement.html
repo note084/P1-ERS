@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/_globals.css">
+    <title>Title</title>
+</head>
+<body>
+    <div id="links" class="links">
+    </div>
+    <div id="content" style="width:70%; text-align: center; margin: auto;">
+        <table style="width:100%; text-align: center; margin: auto;">
+            <tr>
+                <th>Reimbursement Type</th>
+                <th>Amount</th>
+            </tr>
+            <div>
+                <tr>
+                    <td>
+                        <input type="radio" id="lodging" name="type" value = "Lodging" required>
+                        <label for="lodging">Lodging</label>
+                        <input type="radio" id="food" name="type" value = "Food" required>
+                        <label for="food">Food</label>
+                        <input type="radio" id="travel" name="type" value = "Travel" required>
+                        <label for="food">Travel</label>
+                    </td>
+                    <td style="width: 40%">
+                        <label>Amount: $</label>
+                        <input type="number" id="amount" placeholder="" name="amount" required>
+                    </td>
+                </tr>
+            </div>
+        </table>
+        <button style="margin: 10px auto; padding: 4px 10px;" onclick="submitForm()">Submit</button>
+    </div>
+</body>
+
+<script src="../js/reimbursementConnection.js"></script>
+<script src="../js/userConnection.js"></script>
+<script>
+    let role = localStorage.getItem("role");
+    let links = document.getElementById("links");
+        if (role == "EMPLOYEE") {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+            <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+        else {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+            <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+            <button><a href="./manageReimbursements.html">Manage Reimbursements</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+
+    async function submitForm() {
+        var today = new Date().toLocaleString();
+        
+        let reimbursementForm = {
+        type: document.querySelector('input[name="type"]:checked').value,
+        amount: document.getElementById("amount").value,
+        author_id: localStorage.getItem("id"),
+        status: "PENDING",
+        date_created: today,
+    }
+        console.log(reimbursementForm);
+
+        let response = await newReimbursement(reimbursementForm);
+        console.log("Response: ", response);//fact finding
+        console.log("Response JSON: ", response.json());//we should delete these 
+
+        if (response.status == 201){
+            alert("Registration Success!");
+            window.location.href = "./viewReimbursements.html";
+        }
+    }
+</script>
+</html>

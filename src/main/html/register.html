@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/_globals.css">
+    <title>Register</title>
+</head>
+<body>
+    <div class="container links">
+        <div >
+            <button><a href="./index.html">Home</a></button>
+        </div>
+        <div>
+            <table style="margin: auto; padding: 12px;">
+                <tr>
+                    <td><label>Username: </label></td>
+                    <td><input type="text" id="username" placeholder="username" name="username"></td>
+                </tr>
+                <tr>
+                    <td><label>Password: </label></td>
+                    <td><input type="text" id="password" placeholder="password" name="password"></td>
+                </tr>
+                <tr>
+                    <td><label>First name: </label></td>
+                    <td><input type="text" id="firstName" placeholder="firstName" name="John"></td>
+                </tr>
+                <tr>
+                    <td><label>Last name: </label></td>
+                    <td><input type="text" id="lastName" placeholder="lastName" name="Smith"></td>
+                </tr>
+                <tr>
+                    <td><label>Email: </label></td>
+                    <td><input type="text" id="email" placeholder="email" name="john.smith@email.com"></td>
+                </tr>
+                <tr>
+                    <td><label>Role:</label></td>
+                    <td>
+                        <input type="radio" id="employee" name="role" value = "EMPLOYEE">
+                        <label for="employee">Employee</label>
+                        <input type="radio" id="finance_manager" name="role" value = "FINANCE_MANAGER">
+                        <label for="finance_manager">Finance Manager</label>
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+        <div >
+            <button><a href="./index.html">Back</a></button>
+            <button id="contentBoxButton" onclick="submitForm()">Register</button>
+        </div>
+    </div>
+
+    <script src="../js/userConnection.js"></script>
+    <script>
+        //so from here until the closing /script tag it's all js.
+        async function submitForm() {
+
+            /*
+            Build the object we will transfer in our API call. Grab the values from
+            the input elements above.
+            */
+            let newUser = {
+                id: 0,
+                first_name: document.getElementById("firstName").value,
+                last_name: document.getElementById("lastName").value,
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+                role: document.querySelector('input[name="role"]:checked').value,
+                email: document.getElementById("email").value
+            }
+            console.log(newUser.first_name);
+            console.log(newUser);//fact finding
+
+            //Make our asynchronous API call
+            let response = await registerRequest(newUser);
+
+            console.log("Response: ", response);//fact finding
+            console.log("Response JSON: ", response.json());//we should delete these later
+
+            if (response.status == 201) {
+                /*
+                Here we are retyrieving the authToken header, which contains our username as
+                passed back from the server. This way we can use it to identify ourselves in 
+                subsequent API calls.
+                For this to work, you must send back a token in the header of the response
+                The key should match the shown key name "authToken" and the value should be
+                a string you can use to locally store information about the logged in user.
+                In this case we are getting a token that contains the username string, 
+                and storing it in localStorage.
+                */
+                let token = response.headers.get("authToken");
+                console.log("authToken received: ", token);//fact finding
+                localStorage.setItem("authToken", token);
+                alert("Registration Success!");
+
+                //navigate the window to the landing page
+                window.location.href = "./index.html";
+
+            } 
+            else if (response.status == 409) {
+                alert("Username already exists");
+            }
+            else if (response.status == 408) {
+                alert("Email already exists");
+            }
+            else {
+                alert("Unable to register!");
+            }
+        }
+    </script>
+</body>
+</html>

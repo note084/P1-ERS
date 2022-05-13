@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/_globals.css">
+    <title>Title</title>
+</head>
+<style>
+    th, td {
+      border:1px solid black;
+    }
+    </style>
+<body>
+    <div id="links" class="links">
+        <button><a href="./index.html">Home</a></button>
+        <button><a href="./editReimbursement.html">Edit my Reimbursement</a></button>
+        <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+        <button onclick="logout()">Logout</button>
+    </div>
+    <div id="table">
+        <table id="content" style="width:90%; text-align: center; margin: auto;"> 
+        </table>
+    </div>
+</body>
+<script src="../js/util.js"></script>
+<script src="../js/reimbursementConnection.js"></script>
+<script src="../js/userConnection.js"></script>
+<script>
+    let authorizedUser = localStorage.getItem("authToken");
+    let isLoggedIn = localStorage.getItem("isLoggedIn");
+    let userID = localStorage.getItem("id");
+    let role = localStorage.getItem("role");
+    console.log("authorizedUser: ", authorizedUser);//fact finding
+    console.log("isLoggedIn: ", isLoggedIn);//fact finding
+    console.log("userID: ", userID);//fact finding
+
+    let links = document.getElementById("links");
+        if (role == "EMPLOYEE") {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+            <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+        else {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+            <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+            <button><a href="./manageReimbursements.html">Manage Reimbursements</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+
+    (async function retreiveReimbursements() {
+            let response = await getAllReimbursementsByID(userID);
+            let json = await response.json();
+            console.log("Response: ", response);//more fact finding
+            console.log("Response JSON: ", json);//we should probably remove these later
+            
+
+
+            let content = document.getElementById("content");
+            content.innerHTML = `<tr>
+                    <th>Reimbursement Type</th>
+                    <th>Amount</th>
+                    <th>Author</th>
+                    <th>Resolver</th>
+                    <th>Status</th>
+                    <th>Date Created</th>
+                    <th>Date Resolved</th>
+                </tr>`;
+            json.forEach(element => {
+                if (element.resolver == null){
+                    content.innerHTML += `
+                    <tr>
+                        <td>` + element.type + `</td>
+                        <td>$` + element.amount.toFixed(2) + `</td>
+                        <td>` + element.author.first_name + 
+                            ' ' + element.author.last_name + `</td>
+                        <td>N/A</td>
+                        <td>` + element.status + `</td>
+                        <td>` + element.date_created + `</td>
+                        <td>` + element.date_resolved + `</td>
+                    </tr>`;
+                }
+                else {
+                    content.innerHTML += `
+                    <tr>
+                        <td>` + element.type + `</td>
+                        <td>$` + element.amount.toFixed(2) + `</td>
+                        <td>` + element.author.first_name + 
+                            ' ' + element.author.last_name + `</td>
+                        <td>` + element.resolver.first_name +
+                            ' ' + element.resolver.last_name + `</td>
+                    <td>` + element.status + `</td>
+                    <td>` + element.date_created + `</td>
+                    <td>` + element.date_resolved + `</td>
+                </tr>`;
+                }
+            });
+    })();
+
+</script>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/_globals.css">
+    <title>Title</title>
+</head>
+<style>
+    th, td {
+      border:1px solid black;
+    }
+    input[type=radio],
+    input.radio {
+
+      clear: none;
+      margin: 2px 0 0 2px;
+    }
+    .links {
+        margin: auto;
+        width: 100%;
+        text-align: center;
+    }
+    </style>
+<body>
+    <div class="container">
+        <div id="links" class="links">
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./viewReimbursements.html">View All Reimbursements</a></button>
+            <button><a href="./submitReimbursement.html">Submit Reimbursement</a></button>
+            <button onclick="logout()">Logout</button>
+        </div>
+        <div id="sort" class="links">
+            <button onclick="sortAll()">Sort All</button>
+            <button onclick="sortPending()">Sort Pending</button>
+            <button onclick="sortDenied()">Sort Denied</button>
+            <button onclick="sortApproved()">Sort Approved</button>
+        </div>
+        <div id="table">
+            <table id="content" style="width:90%; text-align: center; margin: auto;"> 
+            </table>
+        </div>
+        <div id="submitButton" class="links">
+            <button style="margin: 0 10px;" onclick="denyButton()">Deny</button>
+            <button style="margin: 0 10px;" onclick="approveButton()">Approve</button>
+        </div>
+    </div>
+</body>
+<script src="../js/util.js"></script>
+<script src="../js/reimbursementConnection.js"></script>
+<script src="../js/userConnection.js"></script>
+<script>
+    let authorizedUser = localStorage.getItem("authToken");
+    let isLoggedIn = localStorage.getItem("isLoggedIn");
+    let userID = localStorage.getItem("id");
+    let role = localStorage.getItem("role");
+    console.log("authorizedUser: ", authorizedUser);//fact finding
+    console.log("isLoggedIn: ", isLoggedIn);//fact finding
+    console.log("userID: ", userID);//fact finding
+
+    let links = document.getElementById("links");
+        if (role == "EMPLOYEE") {
+            alert("No Access");
+            window.location.href = "./index.html";
+
+        }
+        else {
+            links.innerHTML = `
+            <button><a href="./index.html">Home</a></button>
+            <button><a href="./viewReimbursements.html">View my Reimbursements</a></button>
+            <button><a href="./editReimbursement.html">Edit my Reimbursements</a></button>
+            <button><a href="./submitReimbursement.html">Submit new Reimbursement</a></button>
+            <button onclick="logout()">Logout</button>
+            `;
+        }
+
+    (async function retreiveReimbursements() {
+        let response = await getAllReimbursements();
+        let json = await response.json();
+        console.log("Response: ", response);//more fact finding
+        console.log("Response JSON: ", json);//we should probably remove these later
+
+
+
+        let content = document.getElementById("content");
+        content.innerHTML = `<tr>
+                <th style="border: none;"></th>
+                <th>Reimbursement Type</th>
+                <th>Amount</th>
+                <th>Author</th>
+                <th>Resolver</th>
+                <th>Status</th>
+                <th>Date Created</th>
+                <th>Date Resolved</th>
+            </tr>`;
+        json.forEach(element => {
+            if (element.author.id != userID) {
+                if (element.status == 'PENDING') {
+                    content.innerHTML += `<div>
+                    <tr>
+                        <td><input type="radio" name="reimbursementID" value = "` + element.id + `"></td>
+                        <td>` + element.type + `</td>
+                        <td>$` + element.amount.toFixed(2) + `</td>
+                        <td>` + element.author.first_name + 
+                            ' ' + element.author.last_name + `</td>
+                        <td>N/A</td>
+                        <td>` + element.status + `</td>
+                        <td>` + element.date_created + `</td>
+                        <td>` + element.date_resolved + `</td>
+                    </tr>
+                    </div>`;
+                }
+                else {
+                    content.innerHTML += `<div>
+                    <tr>
+                        <td><input type="radio" name="reimbursementID" value = "` + element.id + `"></td>
+                        <td>` + element.type + `</td>
+                        <td>$` + element.amount.toFixed(2) + `</td>
+                        <td>` + element.author.first_name + 
+                            ' ' + element.author.last_name + `</td>
+                        <td>` + element.resolver.first_name +
+                            ' ' + element.resolver.last_name + `</td>
+                        <td>` + element.status + `</td>
+                        <td>` + element.date_created + `</td>
+                        <td>` + element.date_resolved + `</td>
+                    </tr>
+                    </div>`;
+                }
+            }
+        });
+    })();
+
+    //sorting view functions
+
+    async function sortAll() {
+        window.location.href = "./manageReimbursements.html";
+    }
+
+    async function sortPending() {
+        let response = await getByStatus("PENDING");
+        let json = await response.json();
+        
+        let content = document.getElementById("content");
+        content.innerHTML = `<tr>
+                <th style="border: none;"></th>
+                <th>Reimbursement Type</th>
+                <th>Amount</th>
+                <th>Author</th>
+                <th>Resolver</th>
+                <th>Status</th>
+                <th>Date Created</th>
+            </tr>`;
+        json.forEach(element => {
+            if (element.author.id != userID) {
+                content.innerHTML += `<div>
+            <tr>
+                <td><input type="radio" name="reimbursementID" value = "` + element.id + `"></td>
+                <td>` + element.type + `</td>
+                <td>$` + element.amount.toFixed(2) + `</td>
+                <td>` + element.author.first_name + 
+                    ' ' + element.author.last_name + `</td>
+                <td>N/A</td>
+                <td>` + element.status + `</td>
+                <td>` + element.date_created + `</td>
+            </tr>
+            </div>`;
+            }
+        });
+    }
+
+    async function sortDenied() {
+        let response = await getByStatus("DENIED");
+        let json = await response.json();
+        
+        let content = document.getElementById("content");
+        content.innerHTML = `<tr>
+                <th style="border: none;"></th>
+                <th>Reimbursement Type</th>
+                <th>Amount</th>
+                <th>Author</th>
+                <th>Resolver</th>
+                <th>Status</th>
+                <th>Date Created</th>
+                <th>Date Resolved</th>
+            </tr>`;
+        json.forEach(element => {
+            if (element.author.id != userID) {
+                content.innerHTML += `<div>
+            <tr>
+                <td><input type="radio" name="reimbursementID" value = "` + element.id + `"></td>
+                <td>` + element.type + `</td>
+                <td>$` + element.amount.toFixed(2) + `</td>
+                <td>` + element.author.first_name + 
+                    ' ' + element.author.last_name + `</td>
+                <td>N/A</td>
+                <td>` + element.status + `</td>
+                <td>` + element.date_created + `</td>
+                <td>` + element.date_resolved + `</td>
+            </tr>
+            </div>`;
+            }
+        });
+    }
+
+    async function sortApproved() {
+        let response = await getByStatus("APPROVED");
+        let json = await response.json();
+        
+        let content = document.getElementById("content");
+        content.innerHTML = `<tr>
+                <th style="border: none;"></th>
+                <th>Reimbursement Type</th>
+                <th>Amount</th>
+                <th>Author</th>
+                <th>Resolver</th>
+                <th>Status</th>
+                <th>Date Created</th>
+                <th>Date Resolved</th>
+            </tr>`;
+        json.forEach(element => {
+            if (element.author.id != userID) {
+                content.innerHTML += `<div>
+            <tr>
+                <td><input type="radio" name="reimbursementID" value = "` + element.id + `"></td>
+                <td>` + element.type + `</td>
+                <td>$` + element.amount.toFixed(2) + `</td>
+                <td>` + element.author.first_name + 
+                    ' ' + element.author.last_name + `</td>
+                <td>N/A</td>
+                <td>` + element.status + `</td>
+                <td>` + element.date_created + `</td>
+                <td>` + element.date_resolved + `</td>
+            </tr>
+            </div>`;
+            }
+        });
+    }
+
+    //updating reimbursement status
+    async function denyButton() {
+        var today = new Date().toLocaleString();
+
+        let dataForm = {
+            id: document.querySelector('input[name="reimbursementID"]:checked').value,
+            resolver_id: userID,
+            status: "DENIED",
+            date_resolved: today,
+        }
+        console.log(dataForm);
+
+        let json = await resolveReimbursement(dataForm);
+
+
+        if (json.status == 200) {
+            alert("Success!");
+            window.location.href = "./manageReimbursements.html"
+        }
+        else {
+            alert("Unable to update!");
+        }
+    }
+
+    async function approveButton() {
+        var today = new Date().toLocaleString();
+
+        let dataForm = {
+            id: document.querySelector('input[name="reimbursementID"]:checked').value,
+            resolver_id: userID,
+            status: "APPROVED",
+            date_resolved: today,
+        }
+        console.log(dataForm);
+
+        let json = await resolveReimbursement(dataForm);
+
+
+        if (json.status == 200) {
+            alert("Success!");
+            window.location.href = "./manageReimbursements.html"
+        }
+        else {
+            alert("Unable to update!");
+        }
+    }
+
+</script>
+</html>

@@ -1,0 +1,26 @@
+/*Links*/
+a, a:visited, a:hover {
+    text-decoration: none;
+    color: black;
+}
+
+.links {
+    margin: auto;
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+}
+
+table {
+    margin: auto;
+    padding: 12px;
+}
+th, td {
+    border:1px solid black;
+}
+
+input[type=radio],
+input.radio {
+    clear: none;
+    margin: 2px 0 0 2px;
+}
